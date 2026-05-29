@@ -40,5 +40,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
     }
+
+    // Public slot availability — only times, no customer data
+    match /publicSlots/{date} {
+      allow read: if true;
+      allow create: if request.resource.data.keys().hasAll(['date', 'bookedTimes'])
+        && request.resource.data.bookedTimes is list;
+      allow update: if request.resource.data.bookedTimes.hasAll(resource.data.bookedTimes);
+    }
   }
 }

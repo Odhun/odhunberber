@@ -8,7 +8,6 @@ import {
   setDoc,
   query,
   orderBy,
-  where,
 } from 'firebase/firestore';
 import { db } from '@/firebase/config';
 import type { Service } from '@/types';
@@ -17,17 +16,21 @@ import { DEFAULT_SERVICES } from '@/lib/constants';
 const COLLECTION = 'services';
 
 export async function getServices(): Promise<Service[]> {
-  const q = query(collection(db, COLLECTION), where('isActive', '==', true), orderBy('order', 'asc'));
-  const snapshot = await getDocs(q);
+  // Simple query without composite index — filter+sort client-side
+  const snapshot = await getDocs(collection(db, COLLECTION));
   if (snapshot.empty) return DEFAULT_SERVICES;
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Service));
+  return snapshot.docs
+    .map((d) => ({ id: d.id, ...d.data() } as Service))
+    .filter((s) => s.isActive)
+    .sort((a, b) => a.order - b.order);
 }
 
 export async function getAllServicesAdmin(): Promise<Service[]> {
-  const q = query(collection(db, COLLECTION), orderBy('order', 'asc'));
-  const snapshot = await getDocs(q);
+  const snapshot = await getDocs(collection(db, COLLECTION));
   if (snapshot.empty) return DEFAULT_SERVICES;
-  return snapshot.docs.map((d) => ({ id: d.id, ...d.data() } as Service));
+  return snapshot.docs
+    .map((d) => ({ id: d.id, ...d.data() } as Service))
+    .sort((a, b) => a.order - b.order);
 }
 
 export async function addService(data: Omit<Service, 'id'>): Promise<string> {
