@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email == 'admin@odhunberber.com';
+    }
+
+    match /appointments/{appointmentId} {
+      allow create: if request.resource.data.keys().hasAll([
+        'customerName', 'customerPhone', 'serviceId', 'serviceName',
+        'date', 'time', 'status', 'createdAt', 'updatedAt'
+      ])
+      && request.resource.data.status == 'pending'
+      && request.resource.data.customerName is string
+      && request.resource.data.customerName.size() >= 2
+      && request.resource.data.customerName.size() <= 100
+      && request.resource.data.customerPhone is string;
+
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /slots/{slotId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /blockedDates/{dateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}

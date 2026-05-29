@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;600;700&display=swap');
+
+:root {
+  --font-inter: 'Inter', system-ui, sans-serif;
+  --font-playfair: 'Playfair Display', Georgia, serif;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-dark-950 text-white antialiased;
+  font-family: var(--font-inter);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-dark-600;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-dark-500;
+}
+
+/* Glassmorphism utility */
+.glass {
+  @apply border border-white/10 bg-white/5 backdrop-blur-md;
+}
+
+/* Gold gradient text */
+.text-gold-gradient {
+  @apply bg-gradient-to-r from-gold-400 to-gold-600 bg-clip-text text-transparent;
+}
+
+/* Page transitions */
+.page-enter {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Shimmer effect for skeletons */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    theme('colors.dark.800') 25%,
+    theme('colors.dark.700') 50%,
+    theme('colors.dark.800') 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}

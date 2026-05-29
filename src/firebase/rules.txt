@@ -1,0 +1,54 @@
+// firestore.rules - Deploy via Firebase Console or firebase deploy --only firestore:rules
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: only authenticated admin
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email == 'admin@odhunberber.com';
+    }
+
+    // Appointments: anyone can create (booking), only admin can read/update/delete
+    match /appointments/{appointmentId} {
+      allow create: if request.resource.data.keys().hasAll([
+        'customerName', 'customerPhone', 'serviceId', 'serviceName',
+        'date', 'time', 'status', 'createdAt', 'updatedAt'
+      ])
+      && request.resource.data.status == 'pending'
+      && request.resource.data.customerName is string
+      && request.resource.data.customerName.size() >= 2
+      && request.resource.data.customerName.size() <= 100
+      && request.resource.data.customerPhone is string
+      && request.resource.data.customerPhone.size() >= 10
+      && request.resource.data.customerPhone.size() <= 15;
+
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Time slots: public read (status only), admin write
+    match /slots/{slotId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Services: public read, admin write
+    match /services/{serviceId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Settings: public read, admin write
+    match /settings/{settingId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Blocked dates: public read (date only), admin write
+    match /blockedDates/{dateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+  }
+}
