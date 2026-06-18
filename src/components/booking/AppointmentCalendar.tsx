@@ -8,7 +8,6 @@ import {
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
-  isSameMonth,
   isSameDay,
   isToday,
   isBefore,
@@ -24,7 +23,7 @@ interface AppointmentCalendarProps {
   selectedDate: Date | null;
   onSelectDate: (date: Date) => void;
   blockedDates?: string[];
-  disabledDays?: number[]; // 0=Sun, 1=Mon...
+  disabledDays?: number[];
 }
 
 const DAY_NAMES = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
@@ -36,102 +35,120 @@ export default function AppointmentCalendar({
   disabledDays = [],
 }: AppointmentCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [direction, setDirection] = useState(0);
+
+  const changeMonth = (dir: number) => {
+    setDirection(dir);
+    setCurrentMonth(prev => dir > 0 ? addMonths(prev, 1) : subMonths(prev, 1));
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-
-  // Monday-first offset
   const startOffset = (getDay(monthStart) + 6) % 7;
   const emptyDays = Array.from({ length: startOffset });
 
-  const isBlocked = (date: Date) => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return blockedDates.includes(dateStr);
-  };
-
+  const isBlocked = (date: Date) => blockedDates.includes(format(date, 'yyyy-MM-dd'));
   const isDisabledDay = (date: Date) => {
-    const dayIndex = (getDay(date) + 6) % 7; // Mon=0..Sun=6
-    // Convert disabledDays (0=Sun) to Mon-first
+    const dayIndex = (getDay(date) + 6) % 7;
     return disabledDays.some(d => (d + 6) % 7 === dayIndex);
   };
-
-  const isDateDisabled = (date: Date) => {
-    return isBefore(startOfDay(date), startOfDay(new Date())) || isBlocked(date) || isDisabledDay(date);
-  };
+  const isDateDisabled = (date: Date) =>
+    isBefore(startOfDay(date), startOfDay(new Date())) || isBlocked(date) || isDisabledDay(date);
 
   return (
-    <div className="rounded-2xl border border-dark-700 bg-dark-800 p-4">
-      {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
+    <div className="w-full">
+      {/* Month header */}
+      <div className="flex items-center justify-between mb-6">
         <button
-          onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-          className="rounded-lg p-2 text-dark-400 hover:bg-dark-700 hover:text-white transition-colors"
+          onClick={() => changeMonth(-1)}
+          className="w-9 h-9 rounded-full border border-white/8 flex items-center justify-center text-dark-400 hover:border-gold-400/30 hover:text-white transition-all duration-200 cursor-pointer"
         >
-          <ChevronLeft size={18} />
+          <ChevronLeft size={16} />
         </button>
-        <h3 className="font-semibold text-white capitalize">
-          {format(currentMonth, 'MMMM yyyy', { locale: tr })}
-        </h3>
+        <AnimatePresence mode="wait">
+          <motion.h3
+            key={format(currentMonth, 'yyyy-MM')}
+            initial={{ opacity: 0, y: direction > 0 ? 8 : -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: direction > 0 ? -8 : 8 }}
+            transition={{ duration: 0.2 }}
+            className="font-display text-lg font-light text-white capitalize tracking-wide"
+          >
+            {format(currentMonth, 'MMMM yyyy', { locale: tr })}
+          </motion.h3>
+        </AnimatePresence>
         <button
-          onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-          className="rounded-lg p-2 text-dark-400 hover:bg-dark-700 hover:text-white transition-colors"
+          onClick={() => changeMonth(1)}
+          className="w-9 h-9 rounded-full border border-white/8 flex items-center justify-center text-dark-400 hover:border-gold-400/30 hover:text-white transition-all duration-200 cursor-pointer"
         >
-          <ChevronRight size={18} />
+          <ChevronRight size={16} />
         </button>
       </div>
 
       {/* Day names */}
-      <div className="mb-2 grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 mb-2">
         {DAY_NAMES.map((d) => (
-          <div key={d} className="text-center text-xs font-medium text-dark-500 py-1">
+          <div key={d} className="text-center text-[11px] font-medium text-dark-600 tracking-widest py-1 uppercase">
             {d}
           </div>
         ))}
       </div>
 
-      {/* Days */}
-      <div className="grid grid-cols-7 gap-1">
-        {emptyDays.map((_, i) => (
-          <div key={`empty-${i}`} />
-        ))}
-        {days.map((day) => {
-          const disabled = isDateDisabled(day);
-          const selected = selectedDate ? isSameDay(day, selectedDate) : false;
-          const today = isToday(day);
+      {/* Days grid */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={format(currentMonth, 'yyyy-MM')}
+          initial={{ opacity: 0, x: direction > 0 ? 20 : -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: direction > 0 ? -20 : 20 }}
+          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+          className="grid grid-cols-7 gap-1"
+        >
+          {emptyDays.map((_, i) => <div key={`e-${i}`} />)}
+          {days.map((day) => {
+            const disabled = isDateDisabled(day);
+            const selected = selectedDate ? isSameDay(day, selectedDate) : false;
+            const today = isToday(day);
 
-          return (
-            <motion.button
-              key={day.toString()}
-              whileTap={{ scale: disabled ? 1 : 0.92 }}
-              disabled={disabled}
-              onClick={() => !disabled && onSelectDate(day)}
-              className={cn(
-                'relative flex h-10 w-full items-center justify-center rounded-xl text-sm font-medium transition-all duration-150',
-                selected
-                  ? 'bg-gold-500 text-dark-900 shadow-lg shadow-gold-500/30'
-                  : today && !disabled
-                  ? 'border border-gold-500/40 text-gold-400 hover:bg-gold-500/10'
-                  : disabled
-                  ? 'cursor-not-allowed text-dark-700'
-                  : 'text-dark-200 hover:bg-dark-700 hover:text-white'
-              )}
-            >
-              {format(day, 'd')}
-            </motion.button>
-          );
-        })}
-      </div>
+            return (
+              <motion.button
+                key={day.toString()}
+                whileHover={disabled ? {} : { scale: 1.1 }}
+                whileTap={disabled ? {} : { scale: 0.9 }}
+                disabled={disabled}
+                onClick={() => !disabled && onSelectDate(day)}
+                className={cn(
+                  'relative flex h-10 w-full items-center justify-center rounded-xl text-sm transition-all duration-150 cursor-pointer',
+                  selected
+                    ? 'bg-gold-400 text-dark-950 font-semibold shadow-[0_0_20px_rgba(212,175,55,0.35)]'
+                    : today && !disabled
+                    ? 'border border-gold-400/30 text-gold-400 font-medium hover:bg-gold-400/8'
+                    : disabled
+                    ? 'cursor-not-allowed text-dark-800 font-normal'
+                    : 'text-dark-300 font-normal hover:bg-white/6 hover:text-white'
+                )}
+              >
+                {format(day, 'd')}
+                {today && !selected && (
+                  <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold-400/60" />
+                )}
+              </motion.button>
+            );
+          })}
+        </motion.div>
+      </AnimatePresence>
 
-      <div className="mt-4 flex items-center gap-4 text-xs text-dark-500">
+      {/* Legend */}
+      <div className="mt-5 flex items-center gap-5 text-[11px] text-dark-600">
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-gold-500" /> Seçili
+          <span className="h-2 w-2 rounded-full bg-gold-400" /> Seçili
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full border border-gold-500/40" /> Bugün
+          <span className="h-2 w-2 rounded-full border border-gold-400/40" /> Bugün
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-dark-700" /> Kapalı
+          <span className="h-2 w-2 rounded-full bg-dark-800 border border-dark-700" /> Kapalı
         </span>
       </div>
     </div>

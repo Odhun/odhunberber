@@ -1,8 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { SkeletonTimeSlot } from '@/components/ui/Skeleton';
 
 interface TimeSlotPickerProps {
   slots: { time: string; status: 'available' | 'booked' | 'pending' | 'blocked' }[];
@@ -11,50 +10,84 @@ interface TimeSlotPickerProps {
   loading?: boolean;
 }
 
-const statusConfig = {
-  available: 'cursor-pointer text-dark-200 bg-dark-700 hover:bg-gold-500/10 hover:text-gold-400 hover:border-gold-500/30 border-dark-600',
-  booked: 'cursor-not-allowed text-dark-600 bg-dark-800/50 border-dark-700 line-through',
-  pending: 'cursor-not-allowed text-yellow-600 bg-yellow-500/5 border-yellow-500/10',
-  blocked: 'cursor-not-allowed text-dark-700 bg-dark-800/50 border-dark-700',
-};
-
 export default function TimeSlotPicker({
   slots,
   selectedTime,
   onSelectTime,
   loading,
 }: TimeSlotPickerProps) {
-  if (loading) return <SkeletonTimeSlot />;
-
-  if (slots.length === 0) {
+  if (loading) {
     return (
-      <div className="rounded-xl border border-dark-700 bg-dark-800 p-6 text-center">
-        <p className="text-dark-400">Bu gün için uygun saat yok.</p>
+      <div className="grid grid-cols-3 gap-2">
+        {Array.from({ length: 12 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-11 rounded-xl bg-dark-800/60 animate-pulse"
+            style={{ animationDelay: `${i * 40}ms` }}
+          />
+        ))}
       </div>
     );
   }
 
+  if (slots.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 gap-3">
+        <div className="w-12 h-12 rounded-full border border-dark-700 flex items-center justify-center">
+          <span className="text-dark-600 text-lg">✦</span>
+        </div>
+        <p className="text-dark-500 text-sm">Bu gün için uygun saat yok.</p>
+      </div>
+    );
+  }
+
+  const available = slots.filter(s => s.status === 'available').length;
+
   return (
-    <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
-      {slots.map(({ time, status }) => {
-        const selected = selectedTime === time && status === 'available';
-        return (
-          <motion.button
-            key={time}
-            whileTap={{ scale: status === 'available' ? 0.95 : 1 }}
-            disabled={status !== 'available'}
-            onClick={() => status === 'available' && onSelectTime(time)}
-            className={cn(
-              'h-11 rounded-xl border text-sm font-medium transition-all duration-150',
-              selected
-                ? 'border-gold-500 bg-gold-500 text-dark-900 shadow-lg shadow-gold-500/25'
-                : statusConfig[status]
-            )}
-          >
-            {time}
-          </motion.button>
-        );
-      })}
+    <div>
+      <p className="text-[11px] text-dark-600 tracking-widest uppercase mb-3">
+        {available} uygun saat
+      </p>
+      <div className="grid grid-cols-3 gap-2">
+        <AnimatePresence>
+          {slots.map(({ time, status }, i) => {
+            const isAvail = status === 'available';
+            const selected = selectedTime === time && isAvail;
+
+            return (
+              <motion.button
+                key={time}
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.02, duration: 0.2 }}
+                whileHover={isAvail && !selected ? { scale: 1.04, y: -1 } : {}}
+                whileTap={isAvail ? { scale: 0.96 } : {}}
+                disabled={!isAvail}
+                onClick={() => isAvail && onSelectTime(time)}
+                className={cn(
+                  'h-11 rounded-xl text-sm font-medium transition-all duration-200 relative overflow-hidden',
+                  selected
+                    ? 'bg-gold-400 text-dark-950 shadow-[0_0_20px_rgba(212,175,55,0.35)] cursor-pointer'
+                    : isAvail
+                    ? 'border border-white/6 bg-white/[0.03] text-dark-300 hover:border-gold-400/25 hover:bg-gold-400/6 hover:text-white cursor-pointer'
+                    : status === 'booked'
+                    ? 'border border-dark-800 text-dark-800 cursor-not-allowed line-through'
+                    : 'border border-dark-800 text-dark-800 cursor-not-allowed'
+                )}
+              >
+                {selected && (
+                  <motion.div
+                    layoutId="slot-indicator"
+                    className="absolute inset-0 bg-gold-400"
+                    style={{ zIndex: -1 }}
+                  />
+                )}
+                {time}
+              </motion.button>
+            );
+          })}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

@@ -5,13 +5,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
-import { User, Phone, Scissors, CheckCircle } from 'lucide-react';
+import { User, Phone, Scissors, ArrowRight, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { format } from 'date-fns';
-import { tr } from 'date-fns/locale';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
-import Button from '@/components/ui/Button';
 import { createAppointment } from '@/services/appointments';
 import type { Service } from '@/types';
 import { formatDateTR } from '@/lib/utils';
@@ -78,77 +76,92 @@ export default function AppointmentForm({
   };
 
   if (submitted) {
-    return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="flex flex-col items-center gap-6 py-8 text-center"
-      >
-        <div className="flex h-20 w-20 items-center justify-center rounded-full bg-green-500/10">
-          <CheckCircle size={40} className="text-green-400" />
-        </div>
-        <div className="space-y-2">
-          <h3 className="text-xl font-bold text-white">Randevu Talebiniz Alındı!</h3>
-          <p className="text-dark-400">
-            {formatDateTR(selectedDate)} saat {selectedTime} için randevu talebiniz onay bekliyor.
-          </p>
-          <p className="text-sm text-dark-500">Onay sonrası bilgilendirileceksiniz.</p>
-        </div>
-      </motion.div>
-    );
+    setTimeout(onSuccess, 2000);
+    return null;
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <div className="rounded-xl border border-gold-500/20 bg-gold-500/5 p-4">
-        <p className="text-sm text-dark-300">
-          Seçilen tarih ve saat:{' '}
-          <span className="font-semibold text-gold-400">
-            {formatDateTR(selectedDate)} — {selectedTime}
-          </span>
-        </p>
+    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+      {/* Name */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium tracking-widest text-dark-500 uppercase">Ad Soyad</label>
+        <div className="relative">
+          <User size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-600 pointer-events-none" />
+          <input
+            {...register('customerName')}
+            placeholder="Adınız ve soyadınız"
+            className="w-full h-12 pl-10 pr-4 rounded-xl bg-white/[0.04] border border-white/8 text-white placeholder-dark-600 text-sm focus:outline-none focus:border-gold-400/40 focus:bg-white/[0.06] transition-all"
+          />
+        </div>
+        {errors.customerName && (
+          <p className="text-xs text-red-400 pl-1">{errors.customerName.message}</p>
+        )}
       </div>
 
-      <Input
-        label="Ad Soyad"
-        placeholder="Adınız ve soyadınız"
-        icon={<User size={16} />}
-        error={errors.customerName?.message}
-        {...register('customerName')}
-      />
+      {/* Phone */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium tracking-widest text-dark-500 uppercase">Telefon</label>
+        <div className="relative">
+          <Phone size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-600 pointer-events-none" />
+          <input
+            {...register('customerPhone')}
+            type="tel"
+            placeholder="05XX XXX XX XX"
+            className="w-full h-12 pl-10 pr-4 rounded-xl bg-white/[0.04] border border-white/8 text-white placeholder-dark-600 text-sm focus:outline-none focus:border-gold-400/40 focus:bg-white/[0.06] transition-all"
+          />
+        </div>
+        {errors.customerPhone && (
+          <p className="text-xs text-red-400 pl-1">{errors.customerPhone.message}</p>
+        )}
+      </div>
 
-      <Input
-        label="Telefon"
-        placeholder="05XX XXX XX XX"
-        icon={<Phone size={16} />}
-        type="tel"
-        error={errors.customerPhone?.message}
-        {...register('customerPhone')}
-      />
+      {/* Service */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium tracking-widest text-dark-500 uppercase">Hizmet</label>
+        <div className="relative">
+          <Scissors size={15} className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-600 pointer-events-none z-10" />
+          <select
+            {...register('serviceId')}
+            className="w-full h-12 pl-10 pr-4 rounded-xl bg-white/[0.04] border border-white/8 text-white text-sm focus:outline-none focus:border-gold-400/40 transition-all appearance-none cursor-pointer"
+            style={{ background: 'rgba(255,255,255,0.04)' }}
+          >
+            <option value="" className="bg-dark-900 text-dark-400">Hizmet seçin</option>
+            {services.map(s => (
+              <option key={s.id} value={s.id} className="bg-dark-900 text-white">
+                {s.name} — {s.price} ₺
+              </option>
+            ))}
+          </select>
+        </div>
+        {errors.serviceId && (
+          <p className="text-xs text-red-400 pl-1">{errors.serviceId.message}</p>
+        )}
+      </div>
 
-      <Select
-        label="Hizmet"
-        placeholder="Hizmet seçin"
-        options={services.map((s) => ({
-          value: s.id,
-          label: `${s.name} — ${s.price} ₺`,
-        }))}
-        error={errors.serviceId?.message}
-        {...register('serviceId')}
-      />
-
-      <p className="text-xs text-dark-500">
-        Randevunuz admin onayı bekleyecektir. Kişisel verileriniz KVKK kapsamında korunmaktadır.
+      <p className="text-xs text-dark-700 pt-1">
+        Kişisel verileriniz KVKK kapsamında korunmaktadır.
       </p>
 
-      <div className="flex gap-3">
-        <Button type="button" variant="ghost" onClick={onBack} className="flex-1">
-          Geri
-        </Button>
-        <Button type="submit" loading={submitting} className="flex-1">
-          Randevu Oluştur
-        </Button>
-      </div>
+      <motion.button
+        type="submit"
+        disabled={submitting}
+        whileHover={submitting ? {} : { scale: 1.02 }}
+        whileTap={submitting ? {} : { scale: 0.98 }}
+        className="w-full h-13 rounded-xl bg-gold-400 text-dark-950 font-semibold text-sm flex items-center justify-center gap-3 hover:shadow-[0_0_30px_rgba(212,175,55,0.3)] transition-all disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
+        style={{ height: '52px' }}
+      >
+        {submitting ? (
+          <>
+            <Loader2 size={16} className="animate-spin" />
+            Gönderiliyor…
+          </>
+        ) : (
+          <>
+            Randevu Oluştur
+            <ArrowRight size={15} />
+          </>
+        )}
+      </motion.button>
     </form>
   );
 }
