@@ -36,11 +36,21 @@ export default function ServicesSection() {
           </h2>
         </motion.div>
 
-        {/* Bento grid */}
+        {/* Bento grid — row sums: 7+5=12, 5+7=12, 6+6=12 */}
         <div className="grid grid-cols-12 gap-3">
           {DEFAULT_SERVICES.map((service, i) => {
-            const isWide = i === 0 || i === 3;
-            const isMid = i === 1 || i === 4;
+            // Alternating wide/narrow: [7,5], [5,7], [6,6]
+            const colMap: Record<number, string> = {
+              0: 'col-span-12 md:col-span-7',
+              1: 'col-span-12 md:col-span-5',
+              2: 'col-span-12 md:col-span-5',
+              3: 'col-span-12 md:col-span-7',
+              4: 'col-span-6',
+              5: 'col-span-6',
+            };
+            const isLarge = i === 0 || i === 3;
+            const isSmall = i === 4 || i === 5;
+            const minH = isLarge ? 260 : isSmall ? 180 : 220;
 
             return (
               <motion.div
@@ -48,23 +58,22 @@ export default function ServicesSection() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
                 transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                className={`
-                  group relative rounded-2xl overflow-hidden card-noise cursor-pointer
-                  ${isWide ? 'col-span-12 md:col-span-7' : isMid ? 'col-span-12 md:col-span-5' : 'col-span-6 md:col-span-4'}
-                `}
-                style={{ minHeight: isWide || isMid ? '240px' : '160px' }}
+                className={`group relative rounded-2xl overflow-hidden card-noise cursor-pointer ${colMap[i]}`}
+                style={{ minHeight: `${minH}px` }}
               >
-                <div className="absolute inset-0 bg-dark-800/60 border border-white/5 rounded-2xl transition-all duration-500 group-hover:border-gold-400/20" />
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_at_top_left,rgba(212,175,55,0.06)_0%,transparent_70%)]" />
+                {/* Card bg */}
+                <div className="absolute inset-0 bg-dark-800/50 border border-white/[0.06] rounded-2xl transition-all duration-500 group-hover:border-gold-400/25" />
+                {/* Hover glow */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 bg-[radial-gradient(ellipse_60%_50%_at_20%_20%,rgba(212,175,55,0.07)_0%,transparent_70%)]" />
 
-                <div className="relative z-10 h-full flex flex-col justify-between p-6 md:p-7">
+                <div className="relative z-10 h-full flex flex-col justify-between p-6 md:p-8" style={{ minHeight: `${minH}px` }}>
                   <div>
-                    <span className="text-gold-400/40 text-xs font-mono">{GLYPHS[i]}</span>
-                    <h3 className={`font-display font-light text-white mt-3 leading-tight ${isWide || isMid ? 'text-3xl md:text-4xl' : 'text-xl md:text-2xl'}`}>
+                    <span className="text-gold-400/30 text-[10px] font-mono tracking-widest">{GLYPHS[i]}</span>
+                    <h3 className={`font-display font-light text-white leading-tight mt-3 ${isLarge ? 'text-3xl md:text-4xl' : isSmall ? 'text-xl' : 'text-2xl md:text-3xl'}`}>
                       {service.name}
                     </h3>
-                    {(isWide || isMid) && (
-                      <p className="text-dark-400 text-sm mt-2 leading-relaxed max-w-xs">
+                    {!isSmall && (
+                      <p className="text-dark-500 text-sm mt-2 leading-relaxed max-w-xs">
                         {service.description}
                       </p>
                     )}
@@ -72,14 +81,16 @@ export default function ServicesSection() {
 
                   <div className="flex items-end justify-between mt-6">
                     <div>
-                      <div className="text-gold-400 font-display text-2xl font-medium">{service.price}₺</div>
-                      <div className="flex items-center gap-1.5 mt-1 text-dark-500 text-xs">
-                        <Clock size={10} />
+                      <div className="text-gold-400 font-display font-light" style={{ fontSize: isSmall ? '1.3rem' : '1.6rem' }}>
+                        {service.price}<span className="text-sm ml-0.5">₺</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-1 text-dark-600 text-xs">
+                        <Clock size={9} />
                         <span>{service.duration} dk</span>
                       </div>
                     </div>
-                    <div className="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:border-gold-400/30">
-                      <ArrowRight size={12} className="text-gold-400" />
+                    <div className="w-7 h-7 rounded-full border border-white/[0.08] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:border-gold-400/25">
+                      <ArrowRight size={11} className="text-gold-400" />
                     </div>
                   </div>
                 </div>
