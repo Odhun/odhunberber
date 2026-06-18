@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { motion, useInView } from 'framer-motion';
 import { Clock, ArrowRight, Scissors } from 'lucide-react';
 import { DEFAULT_SERVICES } from '@/lib/constants';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const GLYPHS = ['✦', '◆', '✧', '◇', '✦', '◈'];
 
 export default function ServicesSection() {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-80px' });
+  const isMobile = useIsMobile();
+  const inView = useInView(ref, { once: true, margin: '-60px' });
 
   return (
     <section ref={ref} className="relative py-32 overflow-hidden">
@@ -37,7 +39,7 @@ export default function ServicesSection() {
         </motion.div>
 
         {/* Bento grid — row sums: 7+5=12, 5+7=12, 6+6=12 */}
-        <div className="grid grid-cols-12 gap-3">
+        <div className="grid grid-cols-12 gap-2 md:gap-3">
           {DEFAULT_SERVICES.map((service, i) => {
             // Alternating wide/narrow: [7,5], [5,7], [6,6]
             const colMap: Record<number, string> = {
@@ -55,11 +57,11 @@ export default function ServicesSection() {
             return (
               <motion.div
                 key={service.id}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: isMobile ? 10 : 20 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ duration: 0.5, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                transition={{ duration: isMobile ? 0.3 : 0.5, delay: isMobile ? i * 0.04 : i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                 className={`group relative rounded-2xl overflow-hidden card-noise cursor-pointer ${colMap[i]}`}
-                style={{ minHeight: `${minH}px` }}
+                style={{ minHeight: `${isMobile ? Math.round(minH * 0.8) : minH}px` }}
               >
                 {/* Card bg */}
                 <div className="absolute inset-0 bg-dark-800/50 border border-white/[0.06] rounded-2xl transition-all duration-500 group-hover:border-gold-400/25" />
