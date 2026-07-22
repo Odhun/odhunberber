@@ -1,24 +1,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Search, CheckCircle, XCircle, Trash2, MessageSquare } from 'lucide-react';
+import { Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getAllAppointments, updateAppointmentStatus, deleteAppointment } from '@/services/appointments';
-import { StatusBadge } from '@/components/ui/Badge';
-import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
 import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import AppointmentCard from '@/components/admin/AppointmentCard';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import type { Appointment, AppointmentStatus } from '@/types';
-import { formatDateTR } from '@/lib/utils';
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<AppointmentStatus | 'all'>('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [noteModal, setNoteModal] = useState<{ open: boolean; id: string; note: string }>({ open: false, id: '', note: '' });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -40,7 +42,9 @@ export default function AppointmentsPage() {
       a.customerPhone.includes(search) ||
       a.serviceName.toLowerCase().includes(search.toLowerCase());
     const matchFilter = filter === 'all' || a.status === filter;
-    return matchSearch && matchFilter;
+    const matchFrom = !dateFrom || a.date >= dateFrom;
+    const matchTo = !dateTo || a.date <= dateTo;
+    return matchSearch && matchFilter && matchFrom && matchTo;
   });
 
   const handleStatus = async (id: string, status: AppointmentStatus) => {
@@ -50,7 +54,6 @@ export default function AppointmentsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Randevu kalıcı olarak silinecek. Emin misiniz?')) return;
     await deleteAppointment(id);
     toast.success('Randevu silindi');
     load();
@@ -63,6 +66,8 @@ export default function AppointmentsPage() {
     load();
   };
 
+  const clearDateFilter = () => { setDateFrom(''); setDateTo(''); };
+
   const tabs: { label: string; value: AppointmentStatus | 'all' }[] = [
     { label: 'Tümü', value: 'all' },
     { label: 'Bekleyen', value: 'pending' },
@@ -74,26 +79,50 @@ export default function AppointmentsPage() {
     <div className="space-y-5">
       <h1 className="text-2xl font-bold text-white">Randevular</h1>
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <Input
-          placeholder="İsim, telefon veya hizmet ara..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          icon={<Search size={16} />}
-          className="sm:w-72"
-        />
-        <div className="flex gap-1 overflow-x-auto">
-          {tabs.map(tab => (
-            <button
-              key={tab.value}
-              onClick={() => setFilter(tab.value)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
-                filter === tab.value ? 'bg-gold-500 text-dark-900' : 'bg-dark-800 text-dark-400 hover:text-white'
-              }`}
-            >
-              {tab.label}
+      <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <Input
+            placeholder="İsim, telefon veya hizmet ara..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            icon={<Search size={16} />}
+            className="sm:w-72"
+          />
+          <div className="flex gap-1 overflow-x-auto">
+            {tabs.map(tab => (
+              <button
+                key={tab.value}
+                onClick={() => setFilter(tab.value)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors ${
+                  filter === tab.value ? 'bg-gold-500 text-dark-900' : 'bg-dark-800 text-dark-400 hover:text-white'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-dark-500">Tarih aralığı:</span>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="rounded-lg border border-dark-600 bg-dark-800 px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-gold-500"
+          />
+          <span className="text-dark-500 text-sm">—</span>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="rounded-lg border border-dark-600 bg-dark-800 px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-1 focus:ring-gold-500"
+          />
+          {(dateFrom || dateTo) && (
+            <button onClick={clearDateFilter} className="text-xs text-gold-500 hover:text-gold-400">
+              Temizle
             </button>
-          ))}
+          )}
         </div>
       </div>
 
@@ -106,57 +135,15 @@ export default function AppointmentsPage() {
       ) : (
         <div className="space-y-3">
           {filtered.map((appt, i) => (
-            <motion.div
+            <AppointmentCard
               key={appt.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.03 }}
-              className="rounded-xl border border-dark-700 bg-dark-800 p-4"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="font-semibold text-white">{appt.customerName}</span>
-                    <StatusBadge status={appt.status} />
-                  </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-dark-400">
-                    <span>{appt.serviceName}</span>
-                    <span>{formatDateTR(appt.date)} — {appt.time}</span>
-                    <span>{appt.customerPhone}</span>
-                  </div>
-                  {appt.adminNote && (
-                    <p className="text-sm text-dark-500 italic">Not: {appt.adminNote}</p>
-                  )}
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {appt.status === 'pending' && (
-                    <>
-                      <Button size="sm" onClick={() => handleStatus(appt.id, 'confirmed')} icon={<CheckCircle size={14} />}>
-                        Onayla
-                      </Button>
-                      <Button size="sm" variant="danger" onClick={() => handleStatus(appt.id, 'cancelled')} icon={<XCircle size={14} />}>
-                        İptal
-                      </Button>
-                    </>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setNoteModal({ open: true, id: appt.id, note: appt.adminNote || '' })}
-                    icon={<MessageSquare size={14} />}
-                  >
-                    Not
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleDelete(appt.id)}
-                    icon={<Trash2 size={14} />}
-                    className="text-red-400 hover:text-red-300"
-                  />
-                </div>
-              </div>
-            </motion.div>
+              appointment={appt}
+              delay={Math.min(i, 8) * 0.03}
+              onConfirm={appt.status === 'pending' ? () => handleStatus(appt.id, 'confirmed') : undefined}
+              onCancel={appt.status === 'pending' ? () => handleStatus(appt.id, 'cancelled') : undefined}
+              onNote={() => setNoteModal({ open: true, id: appt.id, note: appt.adminNote || '' })}
+              onDelete={() => setDeleteId(appt.id)}
+            />
           ))}
         </div>
       )}
@@ -181,6 +168,15 @@ export default function AppointmentsPage() {
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="Randevuyu Sil"
+        message="Bu randevu kalıcı olarak silinecek. Bu işlem geri alınamaz. Emin misiniz?"
+        confirmLabel="Sil"
+        onConfirm={() => deleteId && handleDelete(deleteId)}
+        onClose={() => setDeleteId(null)}
+      />
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { DAY_NAMES_TR, type DayOfWeek } from '@/types';
 
 export const metadata: Metadata = {
   title: 'İletişim',
-  description: `${SITE_NAME} iletişim bilgileri. Bize ulaşın, randevu alın.`,
+  description: `${SITE_NAME} iletişim bilgileri. Anamur merkezdeki salonumuza ulaşın, randevu alın.`,
 };
 
 const days: DayOfWeek[] = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -25,7 +25,7 @@ export default function ContactPage() {
             {[
               { icon: Phone, label: 'Telefon', value: CONTACT.phone, href: `tel:${CONTACT.phone}` },
               { icon: Mail, label: 'E-posta', value: CONTACT.email, href: `mailto:${CONTACT.email}` },
-              { icon: MapPin, label: 'Adres', value: CONTACT.address, href: CONTACT.mapUrl, external: true },
+              { icon: MapPin, label: 'Adres', value: CONTACT.address, href: CONTACT.mapLink, external: true },
             ].map((item) => (
               <a
                 key={item.label}
@@ -77,6 +77,16 @@ export default function ContactPage() {
               })}
             </div>
           </div>
+        </div>
+
+        <div className="mt-6 rounded-2xl border border-dark-700 bg-dark-800 overflow-hidden">
+          <iframe
+            src={CONTACT.mapUrl}
+            title={`${SITE_NAME} konumu — Anamur, Mersin`}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="h-72 w-full"
+          />
         </div>
       </div>
     </div>

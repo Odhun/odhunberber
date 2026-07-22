@@ -1,27 +1,29 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { Calendar, Clock, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import { format } from 'date-fns';
+import { useState, useEffect, useMemo } from 'react';
+import { Calendar, Clock, CheckCircle, AlertCircle, TrendingUp, Scissors } from 'lucide-react';
+import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO } from 'date-fns';
 import Link from 'next/link';
 import { getAllAppointments, updateAppointmentStatus } from '@/services/appointments';
-import { StatusBadge } from '@/components/ui/Badge';
-import Button from '@/components/ui/Button';
+import { getAllServicesAdmin } from '@/services/services';
 import { SkeletonCard } from '@/components/ui/Skeleton';
+import StatCard from '@/components/admin/StatCard';
+import AppointmentCard from '@/components/admin/AppointmentCard';
 import toast from 'react-hot-toast';
-import type { Appointment } from '@/types';
+import type { Appointment, Service } from '@/types';
 import { formatDateTR } from '@/lib/utils';
 
 export default function AdminDashboard() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
     try {
-      const data = await getAllAppointments();
-      setAppointments(data);
+      const [appts, svc] = await Promise.all([getAllAppointments(), getAllServicesAdmin()]);
+      setAppointments(appts);
+      setServices(svc);
     } catch {
       toast.error('Randevular yüklenemedi');
     } finally {
@@ -35,6 +37,44 @@ export default function AdminDashboard() {
   const todayAppts = appointments.filter(a => a.date === today);
   const pending = appointments.filter(a => a.status === 'pending');
   const confirmed = appointments.filter(a => a.status === 'confirmed');
+
+  const weekRange = useMemo(
+    () => ({ start: startOfWeek(new Date(), { weekStartsOn: 1 }), end: endOfWeek(new Date(), { weekStartsOn: 1 }) }),
+    []
+  );
+
+  const weekAppts = useMemo(
+    () =>
+      appointments.filter((a) => {
+        try {
+          return isWithinInterval(parseISO(a.date), weekRange) && a.status !== 'cancelled';
+        } catch {
+          return false;
+        }
+      }),
+    [appointments, weekRange]
+  );
+
+  const priceByServiceId = useMemo(() => {
+    const map = new Map<string, number>();
+    services.forEach((s) => map.set(s.id, s.price));
+    return map;
+  }, [services]);
+
+  const estimatedWeeklyRevenue = useMemo(
+    () => weekAppts.reduce((sum, a) => sum + (priceByServiceId.get(a.serviceId) ?? 0), 0),
+    [weekAppts, priceByServiceId]
+  );
+
+  const mostPopularService = useMemo(() => {
+    if (appointments.length === 0) return '—';
+    const counts = new Map<string, number>();
+    appointments
+      .filter((a) => a.status !== 'cancelled')
+      .forEach((a) => counts.set(a.serviceName, (counts.get(a.serviceName) ?? 0) + 1));
+    if (counts.size === 0) return '—';
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1])[0][0];
+  }, [appointments]);
 
   const handleConfirm = async (id: string) => {
     await updateAppointmentStatus(id, 'confirmed');
@@ -55,6 +95,30 @@ export default function AdminDashboard() {
     { icon: Clock, label: 'Toplam', value: appointments.length, color: 'text-gold-400', bg: 'bg-gold-500/10' },
   ];
 
+  const analyticsCards = [
+    {
+      icon: TrendingUp,
+      label: 'Bu Hafta Randevu',
+      value: weekAppts.length,
+      color: 'text-purple-400',
+      bg: 'bg-purple-400/10',
+    },
+    {
+      icon: Scissors,
+      label: 'En Çok Tercih Edilen',
+      value: mostPopularService,
+      color: 'text-pink-400',
+      bg: 'bg-pink-400/10',
+    },
+    {
+      icon: TrendingUp,
+      label: 'Tahmini Haftalık Ciro',
+      value: `₺${estimatedWeeklyRevenue.toLocaleString('tr-TR')}`,
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-400/10',
+    },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -65,20 +129,22 @@ export default function AdminDashboard() {
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {statCards.map((card, i) => (
-          <motion.div
-            key={card.label}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="rounded-2xl border border-dark-700 bg-dark-800 p-5"
-          >
-            <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl ${card.bg}`}>
-              <card.icon size={20} className={card.color} />
-            </div>
-            <p className="text-2xl font-bold text-white">{card.value}</p>
-            <p className="text-sm text-dark-500">{card.label}</p>
-          </motion.div>
+          <StatCard key={card.label} {...card} delay={i * 0.05} />
         ))}
+      </div>
+
+      {/* Analytics */}
+      <div>
+        <h2 className="mb-3 font-semibold text-white">Bu Hafta Özet</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          {analyticsCards.map((card, i) => (
+            <StatCard key={card.label} {...card} delay={0.15 + i * 0.05} />
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-dark-600">
+          Tahmini ciro, mevcut hizmet fiyat listesine göre hesaplanır (iptal edilenler hariç); randevu anındaki
+          gerçek fiyatı yansıtmayabilir.
+        </p>
       </div>
 
       {/* Pending appointments */}
@@ -101,7 +167,7 @@ export default function AdminDashboard() {
         ) : (
           <div className="space-y-3">
             {pending.slice(0, 5).map((appt) => (
-              <AppointmentRow
+              <AppointmentCard
                 key={appt.id}
                 appointment={appt}
                 onConfirm={() => handleConfirm(appt.id)}
@@ -122,7 +188,7 @@ export default function AdminDashboard() {
         ) : (
           <div className="space-y-3">
             {todayAppts.map((appt) => (
-              <AppointmentRow
+              <AppointmentCard
                 key={appt.id}
                 appointment={appt}
                 onConfirm={() => handleConfirm(appt.id)}
@@ -132,38 +198,6 @@ export default function AdminDashboard() {
           </div>
         )}
       </div>
-    </div>
-  );
-}
-
-function AppointmentRow({
-  appointment: a,
-  onConfirm,
-  onCancel,
-}: {
-  appointment: Appointment;
-  onConfirm: () => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="flex flex-col gap-3 rounded-xl border border-dark-700 bg-dark-800 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="font-medium text-white">{a.customerName}</span>
-          <StatusBadge status={a.status} />
-        </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-dark-400">
-          <span>{a.serviceName}</span>
-          <span>{formatDateTR(a.date)} — {a.time}</span>
-          <span>{a.customerPhone}</span>
-        </div>
-      </div>
-      {a.status === 'pending' && (
-        <div className="flex gap-2 shrink-0">
-          <Button size="sm" onClick={onConfirm} icon={<CheckCircle size={14} />}>Onayla</Button>
-          <Button size="sm" variant="danger" onClick={onCancel} icon={<XCircle size={14} />}>İptal</Button>
-        </div>
-      )}
     </div>
   );
 }

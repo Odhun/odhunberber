@@ -24,8 +24,19 @@ export default function AdminLoginPage() {
     try {
       await signIn(email, password);
       router.push('/admin');
-    } catch {
-      toast.error('Giriş başarısız. E-posta veya şifre hatalı.');
+    } catch (err) {
+      const code = (err as { code?: string })?.code || '';
+      if (code === 'auth/network-request-failed') {
+        toast.error('Ağ bağlantısı hatası. İnternet bağlantınızı kontrol edin.');
+      } else if (code === 'auth/too-many-requests') {
+        toast.error('Çok fazla başarısız deneme. Lütfen bir süre sonra tekrar deneyin.');
+      } else if (code === 'auth/invalid-email') {
+        toast.error('Geçersiz e-posta adresi.');
+      } else if (code === 'auth/user-not-found' || code === 'auth/wrong-password' || code === 'auth/invalid-credential') {
+        toast.error('E-posta veya şifre hatalı.');
+      } else {
+        toast.error('Giriş başarısız. Lütfen tekrar deneyin.');
+      }
     } finally {
       setLoading(false);
     }

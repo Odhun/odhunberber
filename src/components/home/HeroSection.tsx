@@ -88,7 +88,7 @@ export default function HeroSection() {
         >
           <span className="h-px w-8 sm:w-12 bg-gradient-to-r from-transparent to-gold-400" />
           <span className="text-[10px] sm:text-[11px] font-semibold tracking-[0.2em] text-gold-400 uppercase">
-            Premium Erkek Kuaförü
+            Anamur&apos;da Premium Erkek Kuaförü
           </span>
           <span className="h-px w-8 sm:w-12 bg-gradient-to-l from-transparent to-gold-400" />
         </motion.div>
@@ -145,7 +145,7 @@ export default function HeroSection() {
           transition={{ duration: 0.5, delay: 0.5 }}
           className="text-dark-300 text-base sm:text-lg max-w-sm sm:max-w-lg mx-auto leading-relaxed mb-10 font-light px-2"
         >
-          Klasik berber sanatını modern teknikler ile birleştiriyoruz.
+          Anamur merkezde klasik berber sanatını modern teknikler ile birleştiriyoruz.
           <span className="hidden sm:inline"><br /></span>
           <span className="text-dark-400 text-sm sm:text-base"> Her müşteriye özel, premium bir deneyim.</span>
         </motion.p>
@@ -186,9 +186,9 @@ export default function HeroSection() {
           className="grid grid-cols-3 max-w-xs mx-auto mt-14 sm:mt-20"
         >
           {[
-            { value: '500+', label: 'Müşteri' },
-            { value: '5★', label: 'Puan' },
-            { value: '3+', label: 'Yıl' },
+            { value: 'Anamur', label: 'Merkez Salon' },
+            { value: 'Usta', label: 'Berberler' },
+            { value: 'Online', label: 'Randevu' },
           ].map((stat) => (
             <div key={stat.label} className="flex flex-col items-center py-3 px-2 border-r border-white/5 last:border-0">
               <span className="font-display text-xl sm:text-2xl font-medium text-gold-400">{stat.value}</span>

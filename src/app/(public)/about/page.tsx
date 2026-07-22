@@ -1,19 +1,24 @@
 import { Metadata } from 'next';
-import { Award, Users, Clock, Scissors } from 'lucide-react';
+import { Award, Users, MapPin, Scissors } from 'lucide-react';
 import Link from 'next/link';
 import Button from '@/components/ui/Button';
-import { SITE_NAME } from '@/lib/constants';
+import { SITE_NAME, DEFAULT_SERVICES } from '@/lib/constants';
 
 export const metadata: Metadata = {
   title: 'Hakkımızda',
-  description: `${SITE_NAME} hakkında bilgi edinin. Deneyimli berber ekibimiz ve premium hizmet anlayışımız.`,
+  description: `${SITE_NAME} hakkında bilgi edinin. Anamur merkezdeki berber ekibimiz ve premium hizmet anlayışımız.`,
 };
 
 const stats = [
-  { icon: Users, value: '500+', label: 'Mutlu Müşteri' },
-  { icon: Clock, value: '3+', label: 'Yıl Deneyim' },
-  { icon: Scissors, value: '6', label: 'Premium Hizmet' },
-  { icon: Award, value: '5★', label: 'Müşteri Puanı' },
+  { icon: MapPin, value: 'Anamur', label: 'Merkez Salon' },
+  { icon: Scissors, value: String(DEFAULT_SERVICES.length), label: 'Hizmet Çeşidi' },
+  { icon: Users, value: 'Randevulu', label: 'Çalışma Sistemi' },
+  { icon: Award, value: 'Özenli', label: 'İşçilik Anlayışı' },
+];
+
+const team = [
+  { role: 'Baş Berber', focus: 'Saç kesimi, stil danışmanlığı ve saç boyama' },
+  { role: 'Sakal & Tıraş Uzmanı', focus: 'Klasik ustura tıraşı ve sakal bakımı' },
 ];
 
 export default function AboutPage() {
@@ -43,16 +48,16 @@ export default function AboutPage() {
           <div className="rounded-2xl border border-dark-700 bg-dark-800 p-6">
             <h2 className="font-serif text-2xl font-semibold text-white mb-4">Hikayemiz</h2>
             <p>
-              Odhun Berber, klasik berber sanatını modern teknikler ve premium deneyimle birleştirme
-              vizyonuyla kurulmuştur. Her müşterimize sadece saç kesimi değil, tam bir bakım deneyimi
-              sunmayı hedefliyoruz.
+              Odhun Berber, Anamur merkezde klasik berber sanatını modern teknikler ve premium bir
+              deneyimle birleştirme vizyonuyla hizmet veriyor. Her müşterimize sadece saç kesimi değil,
+              tam bir bakım deneyimi sunmayı hedefliyoruz.
             </p>
           </div>
 
           <div className="rounded-2xl border border-dark-700 bg-dark-800 p-6">
             <h2 className="font-serif text-2xl font-semibold text-white mb-4">Vizyonumuz</h2>
             <p>
-              Türkiye'nin en prestijli berber salonlarından biri olmak ve her müşterimizin güven
+              Anamur ve çevresinde tercih edilen bir berber salonu olmak ve her müşterimizin güven
               içinde, rahat ve özel hissettiği bir alan yaratmak.
             </p>
           </div>
@@ -72,6 +77,21 @@ export default function AboutPage() {
                 </li>
               ))}
             </ul>
+          </div>
+
+          <div className="rounded-2xl border border-dark-700 bg-dark-800 p-6">
+            <h2 className="font-serif text-2xl font-semibold text-white mb-4">Ekibimiz</h2>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mb-4">
+              {team.map((member) => (
+                <div key={member.role} className="rounded-xl bg-dark-900/60 border border-dark-700 p-4">
+                  <p className="font-medium text-white">{member.role}</p>
+                  <p className="text-sm text-dark-400 mt-1">{member.focus}</p>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-dark-500 italic">
+              Ekibimizin fotoğraf ve isimlerini yakında burada paylaşacağız.
+            </p>
           </div>
         </div>
 

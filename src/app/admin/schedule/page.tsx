@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { Save, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getWorkingSchedule, updateWorkingSchedule, getBlockedDates, addBlockedDate, removeBlockedDate } from '@/services/settings';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { Skeleton } from '@/components/ui/Skeleton';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import type { WorkingSchedule, BlockedDate, DayOfWeek } from '@/types';
 import { DAY_NAMES_TR } from '@/types';
 import { DEFAULT_WORKING_HOURS } from '@/lib/constants';
@@ -19,14 +19,26 @@ export default function SchedulePage() {
   const [newBlockedDate, setNewBlockedDate] = useState('');
   const [newBlockedReason, setNewBlockedReason] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [removeTarget, setRemoveTarget] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([getWorkingSchedule(), getBlockedDates()])
       .then(([sched, bl]) => { setSchedule(sched); setBlocked(bl); })
-      .catch(() => toast.error('Yüklenirken hata oluştu'));
+      .catch(() => toast.error('Yüklenirken hata oluştu'))
+      .finally(() => setLoading(false));
   }, []);
 
+  const invalidDays = days.filter((day) => {
+    const h = schedule[day];
+    return h.isOpen && h.openTime >= h.closeTime;
+  });
+
   const handleSave = async () => {
+    if (invalidDays.length > 0) {
+      toast.error(`${DAY_NAMES_TR[invalidDays[0]]} günü için açılış saati kapanıştan önce olmalı`);
+      return;
+    }
     setSaving(true);
     try {
       await updateWorkingSchedule(schedule);
@@ -40,6 +52,10 @@ export default function SchedulePage() {
 
   const handleAddBlocked = async () => {
     if (!newBlockedDate) { toast.error('Tarih seçin'); return; }
+    if (blocked.some((b) => b.date === newBlockedDate)) {
+      toast.error('Bu tarih zaten tatil günü olarak eklenmiş');
+      return;
+    }
     await addBlockedDate({ date: newBlockedDate, reason: newBlockedReason });
     toast.success('Tatil günü eklendi');
     setNewBlockedDate('');
@@ -54,6 +70,19 @@ export default function SchedulePage() {
     toast.success('Tatil günü kaldırıldı');
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold text-white">Çalışma Saatleri</h1>
+        <div className="rounded-2xl border border-dark-700 bg-dark-800 p-5 space-y-3">
+          {[1, 2, 3, 4, 5, 6, 7].map((i) => (
+            <Skeleton key={i} className="h-10 w-full" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-white">Çalışma Saatleri</h1>
@@ -66,9 +95,10 @@ export default function SchedulePage() {
         <div className="divide-y divide-dark-700">
           {days.map((day) => {
             const h = schedule[day];
+            const invalid = h.isOpen && h.openTime >= h.closeTime;
             return (
-              <div key={day} className="flex flex-wrap items-center gap-3 px-5 py-3.5">
-                <label className="flex items-center gap-2 w-32">
+              <div key={day} className="flex flex-col gap-2 px-5 py-3.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+                <label className="flex items-center gap-2 sm:w-32">
                   <input
                     type="checkbox"
                     checked={h.isOpen}
@@ -93,7 +123,7 @@ export default function SchedulePage() {
                           ...prev,
                           [day]: { ...prev[day], openTime: e.target.value }
                         }))}
-                        className="rounded-lg border border-dark-600 bg-dark-700 px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-gold-500"
+                        className={`rounded-lg border bg-dark-700 px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 ${invalid ? 'border-red-500/60 focus:ring-red-500' : 'border-dark-600 focus:ring-gold-500'}`}
                       />
                     </div>
                     <div className="flex items-center gap-1">
@@ -105,7 +135,7 @@ export default function SchedulePage() {
                           ...prev,
                           [day]: { ...prev[day], closeTime: e.target.value }
                         }))}
-                        className="rounded-lg border border-dark-600 bg-dark-700 px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 focus:ring-gold-500"
+                        className={`rounded-lg border bg-dark-700 px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 ${invalid ? 'border-red-500/60 focus:ring-red-500' : 'border-dark-600 focus:ring-gold-500'}`}
                       />
                     </div>
                     <div className="flex items-center gap-1">
@@ -125,6 +155,9 @@ export default function SchedulePage() {
                         <option value={60}>60</option>
                       </select>
                     </div>
+                    {invalid && (
+                      <span className="text-xs text-red-400">Açılış, kapanıştan önce olmalı</span>
+                    )}
                   </div>
                 )}
               </div>
@@ -132,7 +165,7 @@ export default function SchedulePage() {
           })}
         </div>
         <div className="border-t border-dark-700 px-5 py-4">
-          <Button onClick={handleSave} loading={saving} icon={<Save size={15} />}>
+          <Button onClick={handleSave} loading={saving} disabled={invalidDays.length > 0} icon={<Save size={15} />}>
             Kaydet
           </Button>
         </div>
@@ -172,7 +205,7 @@ export default function SchedulePage() {
                     {b.reason && <span className="ml-2 text-xs text-dark-400">— {b.reason}</span>}
                   </div>
                   <button
-                    onClick={() => handleRemoveBlocked(b.id)}
+                    onClick={() => setRemoveTarget(b.id)}
                     className="text-dark-400 hover:text-red-400 transition-colors"
                   >
                     <Trash2 size={15} />
@@ -183,6 +216,15 @@ export default function SchedulePage() {
           )}
         </div>
       </div>
+
+      <ConfirmDialog
+        open={removeTarget !== null}
+        title="Tatil Gününü Kaldır"
+        message="Bu tarih tekrar randevu alınabilir hale gelecek. Emin misiniz?"
+        confirmLabel="Kaldır"
+        onConfirm={() => removeTarget && handleRemoveBlocked(removeTarget)}
+        onClose={() => setRemoveTarget(null)}
+      />
     </div>
   );
 }

@@ -1,13 +1,17 @@
 export const SITE_NAME = 'Odhun Berber';
 export const SITE_DESCRIPTION =
-  'Odhun Berber - Premium erkek kuaförü. Modern berber salonu deneyimi için randevu alın.';
+  "Odhun Berber - Anamur'da premium erkek kuaförü. Modern berber salonu deneyimi için randevu alın.";
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://odhunberber.com';
 
+// TODO: Aşağıdaki alanlar gerçek işletme bilgisi doğrulanana kadar yer tutucudur.
+// phone/instagram/facebook: gerçek hesap/numara eklenmeden önce değiştirilmelidir.
+// address: ilçe düzeyi (Anamur, Mersin) doğrudur; açık adres eklenmelidir.
 export const CONTACT = {
-  phone: '+90 555 123 45 67',
+  phone: '+90 5XX XXX XX XX',
   email: 'info@odhunberber.com',
-  address: 'Örnek Mahallesi, Berber Sokak No:1, İstanbul',
-  mapUrl: 'https://maps.google.com',
+  address: 'Anamur Merkez, Mersin (açık adres eklenecek)',
+  mapUrl: 'https://www.google.com/maps?q=Anamur+Merkez,+Mersin&output=embed',
+  mapLink: 'https://www.google.com/maps/search/?api=1&query=Anamur+Merkez,+Mersin',
   instagram: 'https://instagram.com/odhunberber',
   facebook: 'https://facebook.com/odhunberber',
 };
@@ -19,7 +23,7 @@ export const DEFAULT_WORKING_HOURS = {
   thursday: { isOpen: true, openTime: '09:00', closeTime: '20:00', slotInterval: 30 },
   friday: { isOpen: true, openTime: '09:00', closeTime: '20:00', slotInterval: 30 },
   saturday: { isOpen: true, openTime: '09:00', closeTime: '18:00', slotInterval: 30 },
-  sunday: { isOpen: false, openTime: '10:00', closeTime: '16:00', slotInterval: 30 },
+  sunday: { isOpen: false, openTime: '00:00', closeTime: '00:00', slotInterval: 30 },
 };
 
 export const DEFAULT_SERVICES = [

@@ -47,6 +47,9 @@ export default function Footer() {
                 { href: '/appointment', label: 'Randevu Al' },
                 { href: '/prices', label: 'Fiyat Listesi' },
                 { href: '/about', label: 'Hakkımızda' },
+                { href: '/blog', label: 'Berber Rehberi' },
+                { href: '/anamur-berber', label: 'Anamur Berber' },
+                { href: '/bozyazi-berber', label: 'Bozyazı Berber' },
                 { href: '/contact', label: 'İletişim' },
               ].map((link) => (
                 <li key={link.href}>
@@ -111,11 +114,10 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-dark-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="mt-10 border-t border-dark-800 pt-6 flex flex-col sm:flex-row items-center justify-center gap-3">
           <p className="text-xs text-dark-500">
             © {year} {SITE_NAME}. Tüm hakları saklıdır.
           </p>
-          <p className="text-xs text-dark-600">v0.1.0</p>
         </div>
       </div>
     </footer>

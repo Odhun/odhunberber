@@ -7,7 +7,7 @@ import LocationSection from '@/components/home/LocationSection';
 import { SITE_NAME, SITE_DESCRIPTION } from '@/lib/constants';
 
 export const metadata: Metadata = {
-  title: `${SITE_NAME} — Premium Erkek Kuaförü`,
+  title: `${SITE_NAME} — Anamur'da Premium Erkek Kuaförü`,
   description: SITE_DESCRIPTION,
 };
 

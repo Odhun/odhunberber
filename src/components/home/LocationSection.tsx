@@ -13,7 +13,7 @@ export default function LocationSection() {
   const contacts = [
     { icon: Phone, label: 'Telefon', value: CONTACT.phone, href: `tel:${CONTACT.phone}` },
     { icon: Mail, label: 'E-posta', value: CONTACT.email, href: `mailto:${CONTACT.email}` },
-    { icon: MapPin, label: 'Adres', value: CONTACT.address, href: CONTACT.mapUrl },
+    { icon: MapPin, label: 'Adres', value: CONTACT.address, href: CONTACT.mapLink },
   ];
 
   return (
@@ -49,34 +49,31 @@ export default function LocationSection() {
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-          {/* Map placeholder — col 3 */}
-          <motion.a
-            href={CONTACT.mapUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+          {/* Gerçek harita embed — col 3 */}
+          <motion.div
             initial={{ opacity: 0, scale: 0.97 }}
             animate={inView ? { opacity: 1, scale: 1 } : {}}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-3 glass rounded-3xl p-10 flex flex-col items-center justify-center gap-5 min-h-64 group cursor-pointer hover:border-gold-400/20 transition-colors duration-300"
+            className="lg:col-span-3 glass rounded-3xl overflow-hidden flex flex-col min-h-64 group hover:border-gold-400/20 transition-colors duration-300"
           >
-            <motion.div
-              animate={inView ? { y: [0, -6, 0] } : {}}
-              transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-              className="relative"
+            <div className="relative flex-1 min-h-56">
+              <iframe
+                src={CONTACT.mapUrl}
+                title="Odhun Berber konumu — Anamur, Mersin"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="absolute inset-0 h-full w-full grayscale-[0.3] contrast-125"
+              />
+            </div>
+            <a
+              href={CONTACT.mapLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 py-4 text-gold-400 text-sm hover:gap-3 transition-all duration-300 bg-black/40"
             >
-              <div className="w-16 h-16 rounded-full bg-gold-400/10 flex items-center justify-center">
-                <MapPin size={28} className="text-gold-400" />
-              </div>
-              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1.5 bg-black/40 blur-sm rounded-full" />
-            </motion.div>
-            <div className="text-center">
-              <p className="text-white font-display text-xl font-light">{CONTACT.address}</p>
-              <p className="text-dark-500 text-sm mt-2">Haritada görmek için tıklayın</p>
-            </div>
-            <div className="flex items-center gap-2 text-gold-400 text-sm group-hover:gap-3 transition-all duration-300">
               Yol Tarifi Al <ArrowRight size={14} />
-            </div>
-          </motion.a>
+            </a>
+          </motion.div>
 
           {/* Contact cards — col 2 */}
           <div className="lg:col-span-2 flex flex-col gap-3">
